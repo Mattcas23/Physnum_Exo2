@@ -112,3 +112,38 @@ public:
       tFin = 2*pi*Nperiod/Omega;
       dt   = 2*pi/(Omega*nsteps_per);
     } 
+    cout << "final time is "<<"  "<< tFin << endl; 
+
+  }
+  
+
+  ~Exercice2()
+  {
+    outputFile->close();
+    delete outputFile;
+  };
+
+    void run()
+  {
+    t = 0.;
+    last = 0;
+    printOut(true);
+
+    while( t < tFin-0.5*dt )
+    {
+      step();
+      t += dt;
+      printOut(false);
+    }
+    printOut(true);
+  };
+
+};
+
+int main(int argc, char* argv[])
+{
+  Exercice2 engine(argc, argv);
+  engine.run();
+
+  return 0;
+}
