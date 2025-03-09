@@ -109,8 +109,13 @@ public:
     }
     else{
       // simulate Nperiod periods of the eigenmode
-      tFin = 2*pi*Nperiod/Omega;
-      dt   = 2*pi/(Omega*nsteps_per);
+      // tFin = 2*pi*Nperiod/Omega; // je ne pense pas que la période dépende de Omega dans ce cas
+      // Je suggèrerait plutôt :     
+      double w = sqrt( mu * theta * B0 * 12 / (m*L) ) ;
+      double period = 2*pi / w ; 
+      tFin = Nperiod * period ;
+      dt   = period / nsteps_per;
+      // dt   = 2*pi/(Omega*nsteps_per);
     } 
     cout << "final time is "<<"  "<< tFin << endl; 
 
