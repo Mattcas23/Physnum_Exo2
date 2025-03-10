@@ -109,8 +109,10 @@ public:
     }
     else{
       // simulate Nperiod periods of the eigenmode
-      tFin = 2*pi*Nperiod/Omega;
-      dt   = 2*pi/(Omega*nsteps_per);
+      double w = sqrt( mu * theta * B0 * 12 / (m*L) ) ;
+      double period = 2*pi / w ; 
+      tFin = Nperiod * period ;
+      dt   = period / nsteps_per;
     } 
     cout << "final time is "<<"  "<< tFin << endl; 
 
