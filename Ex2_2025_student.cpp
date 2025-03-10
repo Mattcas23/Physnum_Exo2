@@ -109,7 +109,7 @@ public:
     }
     else{
       // simulate Nperiod periods of the eigenmode
-      double w = sqrt( mu * theta * B0 * 12 / (m*L) ) ;
+      double w = sqrt( mu * B0 * 12 / (m*pow(L,2)) ) ;
       double period = 2*pi / w ; 
       tFin = Nperiod * period ;
       dt   = period / nsteps_per;
