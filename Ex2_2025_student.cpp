@@ -27,8 +27,8 @@ private:
   {
     if((!force && last>=sampling) || (force && last!=1))
     {
-      double emec =  m * L * thetadot / 12 - mu * B0 * cos(t); // TODO: Evaluer l'energie mecanique
-      double pnc  =  B1*sin(Omega*t)*thetadot*sin(t) - kappa * pow(thetadot,2); // TODO: Evaluer la puissance des forces non conservatives
+      double emec =  m*pow(L*thetadot,2)/24 - mu*cos(theta)*B0;// TODO: Evaluer l'energie mecanique
+      double pnc  = -kappa*pow(thetadot,2)+mu*B1*sin(theta)*sin(Omega*t)*thetadot; // TODO: Evaluer la puissance des forces non conservatives
 
       *outputFile << t << " " << theta << " " << thetadot << " " << emec << " " << pnc << endl;
       last = 1;
@@ -109,13 +109,8 @@ public:
     }
     else{
       // simulate Nperiod periods of the eigenmode
-      // tFin = 2*pi*Nperiod/Omega; // je ne pense pas que la période dépende de Omega dans ce cas
-      // Je suggèrerait plutôt :     
-      double w = sqrt( mu * theta * B0 * 12 / (m*L) ) ;
-      double period = 2*pi / w ; 
-      tFin = Nperiod * period ;
-      dt   = period / nsteps_per;
-      // dt   = 2*pi/(Omega*nsteps_per);
+      tFin = 2*pi*Nperiod/Omega;
+      dt   = 2*pi/(Omega*nsteps_per);
     } 
     cout << "final time is "<<"  "<< tFin << endl; 
 
