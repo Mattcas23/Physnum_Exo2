@@ -45,7 +45,7 @@ private:
   {
     valarray<double> acc = valarray<double>(2);
 
-    acc[0] = (12/(m*pow(L,2)))*mu*sin(x)*(B0+B1*sin(Omega*t_)); // angular acceleration depending on x and t only
+    acc[0] = (-12/(m*pow(L,2)))*mu*sin(x)*(B0+B1*sin(Omega*t_)); // angular acceleration depending on x and t only
     acc[1] = (-12/(m*pow(L,2)))*kappa*v; // angular acceleration depending on v only
 
     return acc;
