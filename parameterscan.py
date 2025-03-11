@@ -6,20 +6,22 @@ import os
 
 # Parameters
 # TODO adapt to what you need (folder path executable input filename)
-executable = 'test.exe'  # Name of the executable (NB: .exe extension is required on Windows)
-repertoire = r"/Users/Matte/Desktop/EPFL/BA4/Physnum_Exo2"
+executable = r"/Users/a-x-3/Desktop/Ex2_2025_student/exe"  # Name of the executable (NB: .exe extension is required on Windows)
+repertoire = r"/Users/a-x-3/Desktop/Ex2_2025_student"
 os.chdir(repertoire)
 
 input_filename = 'configuration.in.example'  # Name of the input file
 
 
-nsteps = np.array([4000, 6000, 10000, 14e3, 20e3]) # TODO change
+nsteps = np.array([20, 100, 200, 500, 1000]) # TODO change
+#nsteps = np.array([200])
 nsimul = len(nsteps)  # Number of simulations to perform
 
-tfin = 259200  # TODO: Verify that the value of tfin is EXACTLY the same as in the input file
+tfin = 7776000  # Done : Verify that the value of tfin is EXACTLY the same as in the input file
 
 dt = tfin / nsteps
 
+energy = np.zeros(nsimul) # added 
 
 paramstr = 'nsteps'  # Parameter name to scan
 param = nsteps  # Parameter values to scan
@@ -36,55 +38,87 @@ for i in range(nsimul):
     subprocess.run(cmd, shell=True)
     print('Done.')
 
-error = np.zeros(nsimul)
+#values = np.loadtxt("configuration.in.example")
+delta = np.zeros(nsimul)
+
+# Valeurs du fichier configutation.in.example. Vérifier à chaque fois si similaires
+
+m = 0.075
+L = 0.08
+mu = 0.2
+B0 = 0.01
+w0 = np.sqrt( 12 * mu * B0 / ( m * L ** 2 ) )
+
+theta0 = 1e-6
+thetadot0 = 0.0
+
+# ------------------------------ Valeurs Finales Pour Simulations -------------------------------#
 
 for i in range(nsimul):  # Iterate through the results of all simulations
     data = np.loadtxt(outputs[i])  # Load the output file of the i-th simulation
     t = data[:, 0]
 
-    vx = data[-1, 1]  # final position, velocity, energy
-    vy = data[-1, 2]
-    xx = data[-1, 3]
-    yy = data[-1, 4]
-    En = data[-1, 5]
-    convergence_list.append(xx)
+    theta = data[-1, 1]  # final position, velocity, energy
+    thetadot = data[-1, 2]
+    emec = data[-1, 3]
+    pnc = data[-1, 4]
+    convergence_list.append(theta)
+    
+    theta_an = theta0 * np.cos(w0 * t[-1]) / w0**2 # solution analytique pour la position 
+    thetadot_an = - theta0 * np.sin(w0 * t[-1]) / w0 # solution analytique pour la vitesse 
+
+    delta[i] =  np.sqrt( w0**2 * (theta - theta_an)**2 + (thetadot - thetadot_an)**2 )
     # TODO compute the error for each simulation
-    error[i] =  0 
 
 lw = 1.5
 fs = 16
 
-fig, ax = plt.subplots(constrained_layout=True)
-ax.plot(data[:, 1], data[:, 2])
-ax.set_xlabel('x [m]', fontsize=fs)
-ax.set_ylabel('y [m]', fontsize=fs)
+# ------------------------------------------- Zone Figures -------------------------------------- # 
+
+def Emec () : # Affiche l'Emec en fonction du temps
+
+    fig, ax = plt.subplots(constrained_layout=True)
+    plt.ticklabel_format(axis='y', style='scientific', scilimits = (-3,-3))
+    ax.plot(t, data[:,3], color = 'orange' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.set_ylabel('$E_{mec}$', fontsize=fs)
+    ax.set_xlabel('$\\Delta t$ [s]', fontsize=fs)
+    plt.legend()
+
+def Pnc () : # Affiche la puissance des forces non-conservatives en fonction du temps (ajouter la dérivée de Emec après) 
+
+    fig, ax = plt.subplots(constrained_layout=True)
+    plt.ticklabel_format(axis='y', style='scientific', scilimits = (-3,-3))
+    ax.plot(t, data[:,4], color = 'orange' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.set_ylabel('$P_{nc}$', fontsize=fs)
+    ax.set_xlabel('$\\Delta t$ [s]', fontsize=fs)
+    plt.legend() 
+
+def Theta () : # Affiche la position en fonction du temps 
+    
+    fig, ax = plt.subplots(constrained_layout=True)
+    ax.plot(t, data[:,1], color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.set_ylabel('$\\theta$', fontsize=fs)
+    ax.set_xlabel('$\\Delta t$ [s]', fontsize=fs)
+    plt.legend()
 
 
+def Delta (n_order = 1) : # Affiche l'erreur en fonction du nombre de pas 
 
-# uncomment the following if you want debug
-#import pdb
-#pbd.set_trace()
-plt.figure()
-plt.loglog(dt, error, 'r+-', linewidth=lw)
-plt.xlabel('\Delta t [s]', fontsize=fs)
-plt.ylabel('final position error [m]', fontsize=fs)
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(True)
+    plt.figure()
+    plt.loglog(nsteps[:-1], delta[:-1], 'r+-', linewidth=lw)
+    #plt.loglog(nsteps, pow(nsteps,n_order), color = 'black' ,linewidth = lw , label = f"$1/N^{n_order}$" , linestyle = 'dashed')
+    plt.xlabel('$n_{step}$', fontsize=fs)
+    plt.ylabel('$\\delta$', fontsize=fs)
+    plt.xticks(fontsize=fs)
+    plt.yticks(fontsize=fs)
+    plt.grid(True)
+    plt.legend()
 
-"""
-Si on n'a pas la solution analytique: on représente la quantite voulue
-(ci-dessous v_y, modifier selon vos besoins)
-en fonction de (Delta t)^norder, ou norder est un entier.
-"""
-norder = 1  # Modify if needed
+# ------------------ Affichage ------------------ # 
 
-plt.figure()
-plt.plot(dt**norder, convergence_list, 'k+-', linewidth=lw)
-plt.xlabel('\Delta t [s]', fontsize=fs)
-plt.ylabel('v_y [m/s]', fontsize=fs)
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(True)
+Emec ()
+Pnc ()
+Delta ()
+Theta()
 
 plt.show()
