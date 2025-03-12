@@ -13,8 +13,8 @@ os.chdir(repertoire)
 input_filename = 'configuration.in.example'  # Name of the input file
 
 
-nsteps = np.array([10, 20 , 100, 200 , 300 , 400 , 500 , 1000 , 2000 , 3000 , 4000]) # TODO change
-#nsteps = np.array([1000])
+nsteps = np.array([10, 20 , 50 , 100 , 150 , 200]) # TODO change
+#nsteps = np.array([10])
 nsimul = len(nsteps)  # Number of simulations to perform
 
 tfin = 7776000  # Done : Verify that the value of tfin is EXACTLY the same as in the input file
@@ -49,6 +49,7 @@ L = 0.08
 mu = 0.2
 B0 = 0.01
 w0 = np.sqrt( 12 * mu * B0 / ( m * L ** 2 ) )
+print(w0)
 
 theta0 = 1e-6
 thetadot0 = 0.0
@@ -65,8 +66,12 @@ for i in range(nsimul):  # Iterate through the results of all simulations
     pnc = data[-1, 4]
     convergence_list.append(theta)
     
-    theta_an = theta0 * np.cos(w0 * t[-1]) / w0**2 # solution analytique pour la position 
-    thetadot_an = - theta0 * np.sin(w0 * t[-1]) / w0 # solution analytique pour la vitesse 
+    theta_an = theta0 * np.cos(w0 * data[-1,0])  # solution analytique pour la position 
+    thetadot_an = - theta0 * np.sin(w0 * data[-1,0]) * w0 # solution analytique pour la vitesse
+    print (f"theta_an : {theta_an}")
+    print (f"thetadot_an : {thetadot_an}")
+    print (f"theta : {theta}")
+    print (f"thetadot : {thetadot}")
 
     delta[i] =  np.sqrt( w0**2 * (theta - theta_an)**2 + (thetadot - thetadot_an)**2 ) # delta simulation 
     # TODO compute the error for each simulation
@@ -98,7 +103,8 @@ def Pnc () : # Affiche la puissance des forces non-conservatives en fonction du
 def Theta () : # Affiche la position en fonction du temps 
     
     fig, ax = plt.subplots(constrained_layout=True)
-    ax.plot(t, data[:,1], color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.plot(t, 1e-06 * np.cos(w0 * t) , color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")    
+    ax.plot(t, data[:,1], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}", linestyle = "dashed")
     ax.set_ylabel('$\\theta$', fontsize=fs)
     ax.set_xlabel('$\\Delta t$ [s]', fontsize=fs)
     plt.legend()
@@ -107,7 +113,8 @@ def Thetadot () : # Affiche la vitesse en fonction du temps
 
     fig, ax = plt.subplots(constrained_layout=True)
     #ax.plot(t, data[:,1], color = 'blue' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
-    ax.plot(t, data[:,2], color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.plot(t, - theta0 * np.sin(w0 * t) * w0, color = 'red' , label = 'Analytique : $n_{step} = $' + f"{nsteps[-1]:.0f}")
+    ax.plot(t, data[:,2], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}", linestyle = "dashed")
     ax.set_ylabel('$\\dot{\\theta}$', fontsize=fs)
     ax.set_xlabel('$\\Delta t$ [s]', fontsize=fs)
     plt.legend()
@@ -144,9 +151,9 @@ def PointCarre () :
 #Emec ()
 #Pnc ()
 Delta ()
-#Theta () 
-#Thetadot()
-#Phase()
+Theta () 
+Thetadot()
+Phase()
 #PointCarre () 
 
 plt.show()
