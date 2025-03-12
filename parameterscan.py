@@ -38,21 +38,27 @@ for i in range(nsimul):
     subprocess.run(cmd, shell=True)
     print('Done.')
 
-#values = np.loadtxt("configuration.in.example")
+
 delta = np.zeros(nsimul)
 
 # Valeurs du fichier configutation.in.example. Vérifier à chaque fois si similaires
 
-Omega = 0 
-m = 0.075
-L = 0.08
-mu = 0.2
-B0 = 0.01
-w0 = np.sqrt( 12 * mu * B0 / ( m * L ** 2 ) )
-print(w0)
+Values = np.genfromtxt("configuration.in.example" , comments = '//')
 
-theta0 = 1e-6
-thetadot0 = 0.0
+Omega = Values[0,-1]
+kappa = Values[1,-1]
+m = Values[2,-1]
+L = Values[3,-1]
+B1 = Values[4,-1]
+B0 = Values[5,-1]
+mu = Values[6,-1]
+theta0 = Values[7,-1]
+thetadot0 = Values[8,-1]
+sampling = Values[9,-1]
+N_excit = Values[10,-1]
+Nperiod = Values[11,-1]
+
+w0 = np.sqrt( 12 * mu * B0 / ( m * L ** 2 ) )
 
 # ------------------------------ Valeurs Finales Pour Simulations -------------------------------#
 
@@ -68,13 +74,8 @@ for i in range(nsimul):  # Iterate through the results of all simulations
     
     theta_an = theta0 * np.cos(w0 * data[-1,0])  # solution analytique pour la position 
     thetadot_an = - theta0 * np.sin(w0 * data[-1,0]) * w0 # solution analytique pour la vitesse
-    print (f"theta_an : {theta_an}")
-    print (f"thetadot_an : {thetadot_an}")
-    print (f"theta : {theta}")
-    print (f"thetadot : {thetadot}")
 
     delta[i] =  np.sqrt( w0**2 * (theta - theta_an)**2 + (thetadot - thetadot_an)**2 ) # delta simulation 
-    # TODO compute the error for each simulation
 
 lw = 1.5
 fs = 16
@@ -94,6 +95,7 @@ def Emec () : # Affiche l'Emec en fonction du temps
 def Pnc () : # Affiche la puissance des forces non-conservatives en fonction du temps (ajouter la dérivée de Emec après) 
 
     fig, ax = plt.subplots(constrained_layout=True)
+    
     plt.ticklabel_format(axis='y', style='scientific', scilimits = (-3,-3))
     ax.plot(t, data[:,4], color = 'orange' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
     ax.set_ylabel('$P_{nc}$', fontsize=fs)
@@ -112,7 +114,6 @@ def Theta () : # Affiche la position en fonction du temps
 def Thetadot () : # Affiche la vitesse en fonction du temps 
 
     fig, ax = plt.subplots(constrained_layout=True)
-    #ax.plot(t, data[:,1], color = 'blue' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
     ax.plot(t, - theta0 * np.sin(w0 * t) * w0, color = 'red' , label = 'Analytique : $n_{step} = $' + f"{nsteps[-1]:.0f}")
     ax.plot(t, data[:,2], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}", linestyle = "dashed")
     ax.set_ylabel('$\\dot{\\theta}$', fontsize=fs)
@@ -120,11 +121,11 @@ def Thetadot () : # Affiche la vitesse en fonction du temps
     plt.legend()
 
 
-def Delta (n_order = 1) : # Affiche l'erreur en fonction du nombre de pas 
+def Delta (n_order = 2) : # Affiche l'erreur en fonction du nombre de pas 
 
     plt.figure()
     plt.loglog(1/nsteps[:-1], delta[:-1], 'r+-', linewidth=lw)
-    #plt.loglog(nsteps, pow(nsteps,n_order), color = 'black' ,linewidth = lw , label = f"$1/N^{n_order}$" , linestyle = 'dashed')
+    plt.loglog(1/nsteps[:-1], theta0*pow(1/nsteps[:-1], n_order), color = 'black' ,linewidth = lw , label = f"$1/N^{n_order}$" , linestyle = 'dashed')
     plt.xlabel('$\\Delta t$', fontsize=fs)
     plt.ylabel('$\\delta$', fontsize=fs)
     plt.xticks(fontsize=fs)
@@ -140,9 +141,18 @@ def Phase () :
     ax.set_xlabel('$\\theta$', fontsize=fs)
     plt.legend()
 
-def PointCarre () :
+def PointCarre ( cond_init ) :
 
+    for i in cond_init :
 
+        data = np.loadtxt(outputs[i])
+        ts = data[:, 0]
+        thetas    = data[:,1]
+        thetasdot = data[:,2]
+        plt.plot(thetas,thetasdot)
+
+    plt.show()
+    
     print("A faire")
 
 
@@ -151,8 +161,8 @@ def PointCarre () :
 #Emec ()
 #Pnc ()
 Delta ()
-Theta () 
-Thetadot()
+#Theta () 
+#Thetadot()
 Phase()
 #PointCarre () 
 
