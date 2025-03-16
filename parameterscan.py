@@ -184,8 +184,8 @@ def Theta_Convergeance (n_order = 2) :
 
 def delt_ab () : # distance entre les deux simulations au court du temps
 
-    theta0s = np.array([0.5,0.5 + 1e-6]) #
-    #theta0s = np.array([2,2 + 1e-6])
+    #theta0s = np.array([0.5,0.5 + 1e-6]) # conditions stables
+    theta0s = np.array([2,2 + 1e-6]) # conditions chaostiques
 
     outputs2 = []
     paramstr = 'theta0'  # Parameter name to scan
@@ -216,9 +216,9 @@ def delt_ab () : # distance entre les deux simulations au court du temps
     plt.show()
 
 
-def PointCarre () :
+def PointCarre (Attracteur = False) :
 
-    theta0s = np.array([1e-2,0.5]) # [1.5,1.75,1.81,1.83] limite (aussi interessant à afficher) # [1e-2,0.5,1,1.5]
+    theta0s = np.array([-1]) # [1.75,1.81,1.83] limite (aussi interessant à afficher) # [1e-2,0.5,1,1.5] # [1.75,1.81,2] <- avec chaos faire modulo 2pi
 
     outputs2 = []
     paramstr = 'theta0'  # Parameter name to scan
@@ -233,14 +233,20 @@ def PointCarre () :
         subprocess.run(cmd, shell=True)
         print('Done.')
 
-
+    #print(f"{(-1)%(2*np.pi)}")  
+    #print(f"{1%(2*np.pi)}")
+        
     for i in range(nsimulth) :
 
         data = np.loadtxt(outputs2[i])
-        #ts = data[:, 0]
         thetass    = data[:,1]
         thetasdot = data[:,2]
-        plt.scatter(thetass,thetasdot, s = 4, label = f'$\\theta_0 = $ {theta0s[i]}')
+
+        if Attracteur :
+            plt.scatter((thetass%(2*np.pi)),thetasdot, s = 1, color = 'black' , label = f'$\\theta_0 = $ {theta0s[i]}' + "\n" + '$\\dot{\\theta}_0 =$' + f'{thetadot0}')            
+        else : 
+            plt.scatter((thetass%(2*np.pi)),thetasdot, s = 1 , label = f'$\\theta_0 = $ {theta0s[i]}')
+
         plt.ylabel('$\\dot{\\theta}$', fontsize=fs)
         plt.xlabel('$\\theta$', fontsize=fs)
         plt.legend()
@@ -255,8 +261,8 @@ def PointCarre () :
 #Theta () 
 #Thetadot()
 #Phase()
-#PointCarre ()
+PointCarre (True)
 #Theta_Convergeance ()
-delt_ab()
+#delt_ab()
 
 plt.show()
