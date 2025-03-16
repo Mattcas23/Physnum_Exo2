@@ -3,6 +3,7 @@ import subprocess
 import matplotlib.pyplot as plt
 import pdb
 import os
+import scipy as sc
 
 # Parameters
 # TODO adapt to what you need (folder path executable input filename)
@@ -13,8 +14,8 @@ os.chdir(repertoire)
 input_filename = 'configuration.in.example'  # Name of the input file
 
 
-nsteps = np.array([50 , 100 , 150 , 200 , 300]) # TODO change
-#nsteps = np.array([10])
+#nsteps = np.array([50 , 100 , 150 , 200 , 300, 400]) # TODO change
+nsteps = np.array([10])
 nsimul = len(nsteps)  # Number of simulations to perform
 
 tfin = 7776000  # Done : Verify that the value of tfin is EXACTLY the same as in the input file
@@ -37,9 +38,6 @@ for i in range(nsimul):
     print(cmd)
     subprocess.run(cmd, shell=True)
     print('Done.')
-
-
-delta = np.zeros(nsimul)
 
 # Valeurs du fichier configutation.in.example. Vérifier à chaque fois si similaires
 
@@ -76,6 +74,8 @@ def calcul_dt ( Excitation = True ) : # calcule le pas temporel ( retourne un a
     return dt 
 
 # ------------------------------ Valeurs Finales Pour Simulations -------------------------------#
+
+delta = np.zeros(nsimul)
 
 for i in range(nsimul):  # Iterate through the results of all simulations
     data = np.loadtxt(outputs[i])  # Load the output file of the i-th simulation
@@ -119,12 +119,19 @@ def Pnc () : # Affiche la puissance des forces non-conservatives en fonction du
     ax.plot(t, data[:,4], color = 'orange' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}" , linestyle = 'dashed')
     ax.set_ylabel('$P_{nc}$', fontsize=fs)
     ax.set_xlabel('$t$ [s]', fontsize=fs)
-    plt.legend() 
+    plt.legend()
+
+def f(t,a,b,phi) :
+
+    return np.cos(w0*t+phi)*np.exp(-(t-a)**2/b)
 
 def Theta () : # Affiche la position en fonction du temps 
     
     fig, ax = plt.subplots(constrained_layout=True)
-    #ax.plot(t, 1e-06 * np.cos(w0 * t) , color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")    
+    #ax.plot(t, theta0 * np.cos(w0 * t) , color = 'red' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
+    fit = sc.optimize.curve_fit(f,t,data[:,1], p0 = [21.08654502 , 13.96933378 , -0.78540856])[0]
+    print(fit)
+    ax.plot(t, f(t,fit[0],fit[1],fit[2]) , color = 'red' , label = '$f(t)$ = cos($\\omega_0 t + \\phi$)$e^{\\frac{-(t-a)^2}{b}}$ ', linestyle = 'dashed')
     ax.plot(t, data[:,1], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
     ax.set_ylabel('$\\theta$', fontsize=fs)
     ax.set_xlabel('$t$ [s]', fontsize=fs)
@@ -134,19 +141,19 @@ def Thetadot () : # Affiche la vitesse en fonction du temps
 
     fig, ax = plt.subplots(constrained_layout=True)
     #ax.plot(t, - theta0 * np.sin(w0 * t) * w0, color = 'red' , label = 'Analytique : $n_{step} = $' + f"{nsteps[-1]:.0f}")
-    ax.plot(t, data[:,2], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}", linestyle = "dashed")
+    ax.plot(t, data[:,2], color = 'black' , label = '$n_{step} = $' + f"{nsteps[-1]:.0f}")
     ax.set_ylabel('$\\dot{\\theta}$', fontsize=fs)
     ax.set_xlabel('$t$ [s]', fontsize=fs)
     plt.legend()
 
 
-def Delta (n_order = 1) : # Affiche l'erreur en fonction du nombre de pas
+def Delta (n_order = 2) : # Affiche l'erreur en fonction du nombre de pas
 
     dt = calcul_dt() 
 
     plt.figure()
-    plt.loglog(dt, delta[:-1], 'r+-', linewidth=lw)
-    plt.loglog(dt, theta0*pow(1/nsteps[:-1], n_order), color = 'black' ,linewidth = lw , label = f"$1/N^{n_order}$" , linestyle = 'dashed')
+    plt.loglog(dt, delta, 'r+-', linewidth=lw)
+    plt.loglog(dt, theta0*pow(dt, n_order), color = 'black' ,linewidth = lw , label = f"$1/N^{n_order}$" , linestyle = 'dashed')
     plt.xlabel('$\\Delta t$', fontsize=fs)
     plt.ylabel('$\\delta$', fontsize=fs)
     plt.xticks(fontsize=fs)
@@ -168,34 +175,55 @@ def Theta_Convergeance (n_order = 2) :
 
     plt.figure()
     plt.plot(dt**n_order, convergence_list, 'k+-', linewidth=lw)
+    plt.ticklabel_format(axis='y', style='scientific', scilimits = (-4,-4))
     plt.xlabel(f"$(\\Delta t)^{n_order}$ [s]", fontsize=fs)
     plt.ylabel('$\\theta_{final}$', fontsize=fs)
     plt.xticks(fontsize=fs)
     plt.yticks(fontsize=fs)
     plt.grid(True)
 
-def PointCarre ( cond_init ) :
+def PointCarre () :
 
-    for i in cond_init :
+    theta0s = np.array([1e-2,0.5,1,1.5,1.75,1.81,1.82]) # 1.83 limite (aussi interessant à afficher)
 
-        data = np.loadtxt(outputs[i])
-        ts = data[:, 0]
-        thetas    = data[:,1]
+    outputs2 = []
+    paramstr = 'theta0'  # Parameter name to scan
+    param = theta0s  # Parameter values to scan
+    nsimulth = len(theta0s)
+    for i in range(nsimulth):
+        output_file = f"{paramstr}={param[i]}.out"
+        outputs2.append(output_file)
+        cmd = f"{repertoire}{executable} {input_filename} {paramstr}={param[i]:.15g} output={output_file}"
+        cmd = f"{executable} {input_filename} {paramstr}={param[i]:.15g} output={output_file}"
+        print(cmd)
+        subprocess.run(cmd, shell=True)
+        print('Done.')
+
+
+    for i in range(nsimulth) :
+
+        data = np.loadtxt(outputs2[i])
+        #ts = data[:, 0]
+        thetass    = data[:,1]
         thetasdot = data[:,2]
-        plt.plot(thetas,thetasdot)
+        plt.scatter(thetass,thetasdot, s = 4, label = f'$\\theta = $ {theta0s[i]}')
+        plt.ylabel('$\\dot{\\theta}$', fontsize=fs)
+        plt.xlabel('$\\theta$', fontsize=fs)
+        plt.legend()
 
     plt.show()
+        
 
 
 # ------------------ Affichage ------------------ # 
 
-Emec ()
-Pnc ()
+#Emec ()
+#Pnc ()
 #Delta ()
-Theta () 
+#Theta () 
 #Thetadot()
-Phase()
-#PointCarre ()
-Theta_Convergeance ()
+#Phase()
+PointCarre ()
+#Theta_Convergeance ()
 
 plt.show()
