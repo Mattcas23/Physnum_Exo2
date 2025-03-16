@@ -15,7 +15,7 @@ input_filename = 'configuration.in.example'  # Name of the input file
 
 
 #nsteps = np.array([50 , 100 , 150 , 200 , 300, 400]) # TODO change
-nsteps = np.array([10])
+nsteps = np.array([200])
 nsimul = len(nsteps)  # Number of simulations to perform
 
 tfin = 7776000  # Done : Verify that the value of tfin is EXACTLY the same as in the input file
@@ -182,9 +182,43 @@ def Theta_Convergeance (n_order = 2) :
     plt.yticks(fontsize=fs)
     plt.grid(True)
 
+def delt_ab () : # distance entre les deux simulations au court du temps
+
+    theta0s = np.array([0.5,0.5 + 1e-6]) #
+    #theta0s = np.array([2,2 + 1e-6])
+
+    outputs2 = []
+    paramstr = 'theta0'  # Parameter name to scan
+    param = theta0s  # Parameter values to scan
+    nsimulth = len(theta0s)
+
+    for i in range(nsimulth):
+        output_file = f"{paramstr}={param[i]}.out"
+        outputs2.append(output_file)
+        cmd = f"{repertoire}{executable} {input_filename} {paramstr}={param[i]:.15g} output={output_file}"
+        cmd = f"{executable} {input_filename} {paramstr}={param[i]:.15g} output={output_file}"
+        print(cmd)
+        subprocess.run(cmd, shell=True)
+        print('Done.')
+
+    data1 = np.loadtxt(outputs2[0])
+    data2 = np.loadtxt(outputs2[1])
+
+    theta_a = data1[:,1]
+    theta_b = data2[:,1]
+    thetadot_a = data[:,2]
+    thetadot_b = data[:,2]
+
+    deltas = np.sqrt( w0**2 * (theta_b - theta_a)**2 + (thetadot_b + thetadot_a)**2 )  
+    plt.plot(t,deltas, color = 'red')
+    plt.xlabel('$t$ [s]', fontsize=fs)
+    plt.ylabel('$\\delta_{ab} (t)$', fontsize=fs)
+    plt.show()
+
+
 def PointCarre () :
 
-    theta0s = np.array([1e-2,0.5,1,1.5,1.75,1.81,1.82]) # 1.83 limite (aussi interessant à afficher)
+    theta0s = np.array([1e-2,0.5]) # [1.5,1.75,1.81,1.83] limite (aussi interessant à afficher) # [1e-2,0.5,1,1.5]
 
     outputs2 = []
     paramstr = 'theta0'  # Parameter name to scan
@@ -206,14 +240,12 @@ def PointCarre () :
         #ts = data[:, 0]
         thetass    = data[:,1]
         thetasdot = data[:,2]
-        plt.scatter(thetass,thetasdot, s = 4, label = f'$\\theta = $ {theta0s[i]}')
+        plt.scatter(thetass,thetasdot, s = 4, label = f'$\\theta_0 = $ {theta0s[i]}')
         plt.ylabel('$\\dot{\\theta}$', fontsize=fs)
         plt.xlabel('$\\theta$', fontsize=fs)
         plt.legend()
 
     plt.show()
-        
-
 
 # ------------------ Affichage ------------------ # 
 
@@ -223,7 +255,8 @@ def PointCarre () :
 #Theta () 
 #Thetadot()
 #Phase()
-PointCarre ()
+#PointCarre ()
 #Theta_Convergeance ()
+delt_ab()
 
 plt.show()
